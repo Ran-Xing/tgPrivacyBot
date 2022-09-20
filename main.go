@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"fmt"
 	"github.com/pkg/errors"
-	"github.com/robfig/cron/v3"
 	"golang.org/x/net/context"
 	"gorm.io/gorm/logger"
 	"log"
@@ -28,7 +27,6 @@ type Config struct {
 	SendToGroup   Chat
 	UseMysql      string
 	MysqlConfig   string
-	CronTab       string
 	StartMessage  string
 	HelpMessage   string
 	GroupMessage  string
@@ -114,7 +112,6 @@ func init() {
 			return
 		}
 	}
-	config.CronTab = getEnvDefault("CRONTAB", "")
 	config.StartMessage = getEnvDefault("START_MESSAGE", "welcome!")
 	config.HelpMessage = getEnvDefault("HELP_MESSAGE", "help")
 	config.HealthMessage = getEnvDefault("HEALTH_MESSAGE", "health")
@@ -123,7 +120,6 @@ func init() {
 }
 
 func main() {
-	cronTab()
 	httpClient := privacyDns()
 
 	bot, err = NewBot(Settings{
@@ -283,25 +279,4 @@ func privacyDns() (client *http.Client) {
 		},
 	}
 	return client
-}
-
-func cronTab() {
-	if config.CronTab != "" {
-		log.Printf("CronTab: %v Enable!", config.CronTab)
-
-		//nyc, err := time.LoadLocation("Asia/Shanghai") //设置时区
-		//if err != nil {
-		//	nyc = time.FixedZone("CST", 8*3600)
-		//}
-		//
-		//c := cron.New(cron.WithLocation(nyc))
-		c := cron.New()
-		if _, err = c.AddFunc(config.CronTab, func() {
-			log.Println("cronTab: exit")
-			os.Exit(1)
-		}); err != nil {
-			log.Fatal(err)
-		}
-		c.Start()
-	}
 }
