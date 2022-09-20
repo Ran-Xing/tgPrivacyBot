@@ -59,6 +59,9 @@ func init() {
 		log.Fatal(err)
 	}
 
+	loc, _ := time.LoadLocation("Asia/Shanghai")
+	time.Local = loc
+
 	if n, err := strconv.Atoi(getEnvDefault("SEND_TO_GROUP_ID", "")); err == nil {
 		config.SendToGroupID = int64(n)
 	} else {

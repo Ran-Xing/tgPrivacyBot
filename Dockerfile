@@ -15,5 +15,4 @@ ENV https_proxy ""
 ENV http_proxy ""
 ENV all_proxy ""
 ENV SEND_TO_GROUP_ID ""
-ENV CRONTAB ""
 ENTRYPOINT ["/tgPrivacyBot"]
