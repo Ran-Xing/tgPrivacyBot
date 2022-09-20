@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/tls"
 	"fmt"
+	"github.com/fatih/color"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
 	"gorm.io/gorm/logger"
@@ -54,7 +55,7 @@ var (
 
 func init() {
 	// date
-	log.SetPrefix(time.Now().In(time.FixedZone("CST", 8*3600)).Format("2006/01/02 15:04:05 "))
+	log.SetPrefix(color.New(color.FgYellow).Sprintf(time.Now().In(time.FixedZone("CST", 8*3600)).Format("2006/01/02 15:04:05 ")))
 	log.SetFlags(0)
 
 	config.Token = getEnvDefault("TOKEN", "")
