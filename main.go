@@ -53,14 +53,16 @@ var (
 )
 
 func init() {
+	// date
+	log.SetPrefix(time.Now().In(time.FixedZone("CST", 8*3600)).Format("2006/01/02 15:04:05 "))
+	log.SetFlags(0)
+
 	config.Token = getEnvDefault("TOKEN", "")
 
 	if err = testToken(); err != nil {
 		log.Fatal(err)
 	}
-
-	loc, _ := time.LoadLocation("Asia/Shanghai")
-	time.Local = loc
+	//log.Prefix("")
 
 	if n, err := strconv.Atoi(getEnvDefault("SEND_TO_GROUP_ID", "")); err == nil {
 		config.SendToGroupID = int64(n)
