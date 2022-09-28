@@ -3,10 +3,6 @@ package main
 import (
 	"crypto/tls"
 	"fmt"
-	"github.com/fatih/color"
-	"github.com/pkg/errors"
-	"golang.org/x/net/context"
-	"gorm.io/gorm/logger"
 	"log"
 	"net"
 	"net/http"
@@ -14,6 +10,11 @@ import (
 	"regexp"
 	"strconv"
 	"time"
+
+	"github.com/fatih/color"
+	"github.com/pkg/errors"
+	"golang.org/x/net/context"
+	"gorm.io/gorm/logger"
 
 	. "gopkg.in/telebot.v3"
 	"gorm.io/driver/mysql"
@@ -76,7 +77,7 @@ func init() {
 		Type: "group",
 	}
 	config.UseMysql = getEnvDefault("USE_MYSQL", "no")
-	config.MysqlConfig = getEnvDefault("MYSQL_CONFIG", "user:name@tcp(ip:port)/database_name?charset=utf8mb4&parseTime=True&loc=Local")
+	config.MysqlConfig = getEnvDefault("MYSQL_CONFIG", "user:password@tcp(ip:port)/database_name?charset=utf8mb4&parseTime=True&loc=Local")
 
 	if os.Getenv("NO_PROXY") != "" || os.Getenv("no_proxy") != "" {
 		log.Printf("NO_PROXY")
