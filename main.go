@@ -3,11 +3,8 @@ package main
 import (
 	"crypto/tls"
 	"fmt"
-	"github.com/fatih/color"
-	"github.com/pkg/errors"
-	"golang.org/x/net/context"
 	"gorm.io/driver/mysql"
-	"gorm.io/gorm/logger"
+
 	"log"
 	"net"
 	"net/http"
@@ -18,6 +15,11 @@ import (
 
 	"github.com/deta/deta-go/deta"
 	"github.com/deta/deta-go/service/base"
+	"github.com/fatih/color"
+	"github.com/pkg/errors"
+	"golang.org/x/net/context"
+	"gorm.io/gorm/logger"
+
 	. "gopkg.in/telebot.v3"
 	"gorm.io/gorm"
 )
@@ -115,7 +117,7 @@ func init() {
 	config.Mysql.UseMysql = getEnvDefault("USE_MYSQL", "no")
 	if config.Mysql.UseMysql == "yes" {
 		log.Printf("Mysql Enable!")
-		config.Mysql.MysqlConfig = getEnvDefault("MYSQL_CONFIG", "user:name@tcp(ip:port)/database_name?charset=utf8mb4&parseTime=True&loc=Local")
+		config.Mysql.MysqlConfig = getEnvDefault("MYSQL_CONFIG", "user:passwd@tcp(ip:port)/database_name?charset=utf8mb4&parseTime=True&loc=Local")
 		config.Mysql.DB, err = gorm.Open(mysql.New(mysql.Config{
 			DSN:                       config.Mysql.MysqlConfig, // DSN data source name
 			DefaultStringSize:         256,                      // string 类型字段的默认长度

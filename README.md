@@ -9,7 +9,7 @@
 - [ ] SEND_TO_GROUP_ID `-00000000`
 - [X] TOKEN `token`
 - [ ] USE_MYSQL `no/yes`
-- [ ] MYSQL_CONFIG `user:name@tcp(ip:port)/tgPrivacyBot?charset=utf8mb4&parseTime=True&loc=Local`
+- [ ] MYSQL_CONFIG `user:password@tcp(ip:port)/tgPrivacyBot?charset=utf8mb4&parseTime=True&loc=Local`
 - [ ] HTTP_PROXY, HTTPS_PROXY, NO_PROXY `http://ip:port`
 - [ ] START_MESSAGE `Welcome`
 - [ ] HELP_MESSAGE `help`
