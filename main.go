@@ -3,8 +3,11 @@ package main
 import (
 	"crypto/tls"
 	"fmt"
+	"github.com/fatih/color"
+	"github.com/pkg/errors"
+	"golang.org/x/net/context"
 	"gorm.io/driver/mysql"
-
+	"gorm.io/gorm/logger"
 	"log"
 	"net"
 	"net/http"
@@ -15,11 +18,6 @@ import (
 
 	"github.com/deta/deta-go/deta"
 	"github.com/deta/deta-go/service/base"
-	"github.com/fatih/color"
-	"github.com/pkg/errors"
-	"golang.org/x/net/context"
-	"gorm.io/gorm/logger"
-
 	. "gopkg.in/telebot.v3"
 	"gorm.io/gorm"
 )
@@ -146,14 +144,14 @@ func init() {
 		// initialize with project key
 		d, err := deta.New(deta.WithProjectKey("project_key"))
 		if err != nil {
-			fmt.Println("failed to init new Deta instance:", err)
+			log.Fatalf("failed to init new Deta instance: %v", err)
 			return
 		}
 
 		// initialize with base name
 		config.DetaBase.DB, err = base.New(d, "MysqlApp")
 		if err != nil {
-			fmt.Println("failed to init new Base instance:", err)
+			log.Fatalf("failed to init new Base instance: %v", err)
 			return
 		}
 	}
