@@ -58,12 +58,6 @@
       "required": false
     },
     {
-      "key": "START_MESSAGE",
-      "description": "开始 内容，默认包含帮助内容",
-      "value": "Welcome",
-      "required": false
-    },
-    {
       "key": "BETA_BASE_KEY",
       "description": "Project Key",
       "value": "",
