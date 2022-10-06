@@ -3,6 +3,7 @@ module tgPrivacyBot
 go 1.18
 
 require (
+	github.com/deta/deta-go v1.0.0
 	github.com/fatih/color v1.13.0
 	github.com/pkg/errors v0.9.1
 	golang.org/x/net v0.0.0-20220812174116-3211cb980234

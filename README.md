@@ -2,7 +2,7 @@
 
 > BotFather Set Bot
 
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template/cU96ct?referralCode=WgxCHX)
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template/cU96ct?referralCode=WgxCHX) [![Deploy](https://button.deta.dev/1/svg)](https://go.deta.dev/deploy?repo=https://github.com/Ran-Xing/tgPrivacyBot)
 
 ## ARG
 

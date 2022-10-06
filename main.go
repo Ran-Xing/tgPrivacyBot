@@ -6,6 +6,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
+	"gorm.io/driver/mysql"
 	"gorm.io/gorm/logger"
 	"log"
 	"net"
@@ -15,25 +16,39 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/deta/deta-go/deta"
+	"github.com/deta/deta-go/service/base"
 	. "gopkg.in/telebot.v3"
-	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
 
 // Config struct for toml config file
-type Config struct {
-	Bot           *Bot
-	Token         string
-	SendToGroupID int64 `json:"id"`
-	SendToGroup   Chat
-	UseMysql      string
-	MysqlConfig   string
-	StartMessage  string
-	HelpMessage   string
-	GroupMessage  string
-	HealthMessage string
-	AdminID       string
-}
+type (
+	Mysql struct {
+		UseMysql    string
+		MysqlConfig string
+		DB          *gorm.DB
+	}
+	DetaBase struct {
+		UseDetaBase  string
+		DetaBaseKey  string
+		DetaBaseName string
+		DB           *base.Base
+	}
+	Config struct {
+		Bot           *Bot
+		Token         string
+		SendToGroupID int64 `json:"id"`
+		SendToGroup   Chat
+		StartMessage  string
+		HelpMessage   string
+		GroupMessage  string
+		HealthMessage string
+		AdminID       string
+		Mysql         Mysql
+		DetaBase      DetaBase
+	}
+)
 
 type MysqlApp struct {
 	CreatedAt time.Time
@@ -49,7 +64,6 @@ var (
 	bot         *Bot
 	logTemplate string
 	err         error
-	db          *gorm.DB
 	m           MysqlApp
 )
 
@@ -70,13 +84,10 @@ func init() {
 	} else {
 		log.Printf("SEND_TO_GROUP_ID:[%v] is not an integer.", n)
 	}
-
 	config.SendToGroup = Chat{
 		ID:   config.SendToGroupID,
 		Type: "group",
 	}
-	config.UseMysql = getEnvDefault("USE_MYSQL", "no")
-	config.MysqlConfig = getEnvDefault("MYSQL_CONFIG", "user:name@tcp(ip:port)/database_name?charset=utf8mb4&parseTime=True&loc=Local")
 
 	if os.Getenv("NO_PROXY") != "" || os.Getenv("no_proxy") != "" {
 		log.Printf("NO_PROXY")
@@ -101,23 +112,50 @@ func init() {
 		}
 	}
 
-	if config.UseMysql == "yes" {
+	config.Mysql.UseMysql = getEnvDefault("USE_MYSQL", "no")
+	if config.Mysql.UseMysql == "yes" {
 		log.Printf("Mysql Enable!")
-		db, err = gorm.Open(mysql.New(mysql.Config{
-			DSN:                       config.MysqlConfig, // DSN data source name
-			DefaultStringSize:         256,                // string 类型字段的默认长度
-			DisableDatetimePrecision:  true,               // 禁用 datetime 精度，MySQL 5.6 之前的数据库不支持
-			DontSupportRenameIndex:    true,               // 重命名索引时采用删除并新建的方式，MySQL 5.7 之前的数据库和 MariaDB 不支持重命名索引
-			DontSupportRenameColumn:   true,               // 用 `change` 重命名列，MySQL 8 之前的数据库和 MariaDB 不支持重命名列
-			SkipInitializeWithVersion: false,              // 根据当前 MySQL 版本自动配置
+		config.Mysql.MysqlConfig = getEnvDefault("MYSQL_CONFIG", "user:name@tcp(ip:port)/database_name?charset=utf8mb4&parseTime=True&loc=Local")
+		config.Mysql.DB, err = gorm.Open(mysql.New(mysql.Config{
+			DSN:                       config.Mysql.MysqlConfig, // DSN data source name
+			DefaultStringSize:         256,                      // string 类型字段的默认长度
+			DisableDatetimePrecision:  true,                     // 禁用 datetime 精度，MySQL 5.6 之前的数据库不支持
+			DontSupportRenameIndex:    true,                     // 重命名索引时采用删除并新建的方式，MySQL 5.7 之前的数据库和 MariaDB 不支持重命名索引
+			DontSupportRenameColumn:   true,                     // 用 `change` 重命名列，MySQL 8 之前的数据库和 MariaDB 不支持重命名列
+			SkipInitializeWithVersion: false,                    // 根据当前 MySQL 版本自动配置
 		}), &gorm.Config{
 			Logger: logger.Default.LogMode(logger.Silent),
 		})
-		if err = db.AutoMigrate(&MysqlApp{}); err != nil {
+		if err = config.Mysql.DB.AutoMigrate(&MysqlApp{}); err != nil {
 			log.Fatalf("自动创建表失败, %s", err)
 			return
 		}
 	}
+
+	config.DetaBase.UseDetaBase = getEnvDefault("USE_BETA_BASE", "no")
+	if config.DetaBase.UseDetaBase == "yes" {
+		log.Printf("BetaBase Enable!")
+		config.DetaBase.DetaBaseKey = getEnvDefault("BETA_BASE_KEY", "")
+		config.DetaBase.DetaBaseName = getEnvDefault("BETA_BASE_NAME", "")
+		if config.DetaBase.DetaBaseKey == "" || config.DetaBase.DetaBaseName == "" {
+			log.Fatalf("BetaBase Key or Name is empty!")
+			return
+		}
+		// initialize with project key
+		d, err := deta.New(deta.WithProjectKey("project_key"))
+		if err != nil {
+			fmt.Println("failed to init new Deta instance:", err)
+			return
+		}
+
+		// initialize with base name
+		config.DetaBase.DB, err = base.New(d, "MysqlApp")
+		if err != nil {
+			fmt.Println("failed to init new Base instance:", err)
+			return
+		}
+	}
+
 	config.StartMessage = getEnvDefault("START_MESSAGE", "welcome!")
 	config.HelpMessage = getEnvDefault("HELP_MESSAGE", "help")
 	config.HealthMessage = getEnvDefault("HEALTH_MESSAGE", "health")
@@ -243,17 +281,32 @@ func testToken() (err error) {
 
 func tgLog(c Context, msg string) {
 	logTemplate = fmt.Sprintf("user:{%v %v %v} in chat:[%v]", c.Sender().FirstName, c.Sender().LastName, c.Chat().ID, c.Text())
-	m.UserName = c.Sender().FirstName + " " + c.Sender().LastName
-	m.UserID = c.Chat().ID
-	m.Message = c.Text()
+	m = MysqlApp{
+		UserName: c.Sender().FirstName + " " + c.Sender().LastName,
+		UserID:   c.Chat().ID,
+		Message:  c.Text(),
+	}
+
 	if c.Chat().Type == "group" {
 		logTemplate = fmt.Sprintf("user:{%v %v %v} group:{%v %v} in chat:[%v]", c.Sender().FirstName, c.Sender().LastName, c.Sender().ID, c.Chat().Title, c.Chat().ID, c.Text())
 		m.GroupName = c.Chat().Title
 		m.GroupID = c.Chat().ID
 	}
 	log.Printf("%v request from %v", msg, logTemplate)
-	if config.UseMysql == "yes" {
-		if err = db.Create(&m).Error; err != nil {
+
+	if fmt.Sprintf("%v", m.UserID) == config.AdminID {
+		log.Printf("Admin skip")
+		return
+	}
+
+	if config.DetaBase.UseDetaBase == "yes" {
+		if _, err = config.DetaBase.DB.Insert(&m); err != nil {
+			log.Fatalf("写入数据失败: %v\n", err)
+			return
+		}
+	}
+	if config.Mysql.UseMysql == "yes" {
+		if err = config.Mysql.DB.Create(&m).Error; err != nil {
 			log.Fatalf("写入数据失败, %s", err)
 			return
 		}

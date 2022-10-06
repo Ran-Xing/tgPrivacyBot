@@ -1,0 +1,79 @@
+{
+  "name": "tgPrivacyBot",
+  "description": "一个注重隐私的TG机器人",
+  "runtime": "micro's runtime",
+  "env": [
+    {
+      "key": "USE_BETA_BASE",
+      "description": "启用 Deta Base （yes/no）",
+      "value": "no",
+      "required": false
+    },
+    {
+      "key": "GROUP_MESSAGE",
+      "description": "获取群组邀请链接时 发送的内容",
+      "value": "Welcome to use t.me/xxxxxxxxxxxxxxx",
+      "required": false
+    },
+    {
+      "key": "HEALTH_MESSAGE",
+      "description": "获取健康度时 回复的内容",
+      "value": "im fine!",
+      "required": false
+    },
+    {
+      "key": "SEND_TO_GROUP_ID",
+      "description": "将消息转发到指定的群",
+      "value": "-1111111111111111",
+      "required": false
+    },
+    {
+      "key": "DETA_BASE_CONFIG",
+      "description": "DETA BASE 数据库连接配置文件",
+      "value": "user:password@tcp(ip:port)/tgPrivacyBot?charset=utf8mb4&parseTime=True&loc=Local",
+      "required": false
+    },
+    {
+      "key": "ADMIN_ID",
+      "description": "管理员ID",
+      "value": "000000",
+      "required": false
+    },
+    {
+      "key": "HELP_MESSAGE",
+      "description": "帮助信息（告诉用户怎么用）",
+      "value": "help",
+      "required": false
+    },
+    {
+      "key": "TOKEN",
+      "description": "Telegram Token",
+      "value": "1111111111:aaaaaaaaaaaaaaaaaaaaa",
+      "required": true
+    },
+    {
+      "key": "START_MESSAGE",
+      "description": "开始 内容，默认包含帮助内容",
+      "value": "Welcome",
+      "required": false
+    },
+    {
+      "key": "START_MESSAGE",
+      "description": "开始 内容，默认包含帮助内容",
+      "value": "Welcome",
+      "required": false
+    },
+    {
+      "key": "BETA_BASE_KEY",
+      "description": "Project Key",
+      "value": "",
+      "required": false
+    },
+    {
+      "key": "BETA_BASE_NAME",
+      "description": "Key Name",
+      "value": "",
+      "required": false
+    }
+  ]
+}
