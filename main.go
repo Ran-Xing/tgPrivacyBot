@@ -230,9 +230,13 @@ func main() {
 			}
 			return err
 		}
-		if _, err := bot.Send(&config.SendToGroup, c.Text()); err != nil {
+		if msg, err := bot.Send(&config.SendToGroup, c.Text()); err != nil {
 			log.Println(err)
 			return err
+		} else {
+			if _, err := bot.Send(c.Chat(), fmt.Sprintf("[Forward success!](t.me/%s/%d)", msg.Chat.Username, msg.ID), &SendOptions{ParseMode: "markdown"}); err != nil {
+				log.Println(err)
+			}
 		}
 		return err
 	})
