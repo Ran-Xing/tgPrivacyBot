@@ -89,7 +89,7 @@ func init() {
 	config.SenderType = getEnvDefault("SEND_TYPE", "group")
 	config.SenderChat = Chat{
 		ID:   config.SenderID,
-		Type: "group",
+		Type: ChatType(config.SenderType),
 	}
 
 	if os.Getenv("NO_PROXY") != "" || os.Getenv("no_proxy") != "" {
