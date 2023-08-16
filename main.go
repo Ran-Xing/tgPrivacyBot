@@ -38,8 +38,9 @@ type (
 	Config struct {
 		Bot           *Bot
 		Token         string
-		SendToGroupID int64 `json:"id"`
-		SendToGroup   Chat
+		SenderID      int64 `json:"id"`
+		SenderChat    Chat
+		SenderType    string
 		StartMessage  string
 		HelpMessage   string
 		GroupMessage  string
@@ -65,6 +66,7 @@ var (
 	logTemplate string
 	err         error
 	m           MysqlApp
+	stoped      = false
 )
 
 func init() {
@@ -79,13 +81,14 @@ func init() {
 	}
 	//log.Prefix("")
 
-	if n, err := strconv.Atoi(getEnvDefault("SEND_TO_GROUP_ID", "")); err == nil {
-		config.SendToGroupID = int64(n)
+	if n, err := strconv.Atoi(getEnvDefault("SEND_ID", "")); err == nil {
+		config.SenderID = int64(n)
 	} else {
 		log.Printf("SEND_TO_GROUP_ID:[%v] is not an integer.", n)
 	}
-	config.SendToGroup = Chat{
-		ID:   config.SendToGroupID,
+	config.SenderType = getEnvDefault("SEND_TYPE", "group")
+	config.SenderChat = Chat{
+		ID:   config.SenderID,
 		Type: "group",
 	}
 
@@ -132,13 +135,13 @@ func init() {
 		}
 	}
 
-	config.DetaBase.UseDetaBase = getEnvDefault("USE_BETA_BASE", "no")
+	config.DetaBase.UseDetaBase = getEnvDefault("USE_DETA_BASE", "no")
 	if config.DetaBase.UseDetaBase == "yes" {
-		log.Printf("BetaBase Enable!")
-		config.DetaBase.DetaBaseKey = getEnvDefault("BETA_BASE_KEY", "")
-		config.DetaBase.DetaBaseName = getEnvDefault("BETA_BASE_NAME", "")
+		log.Printf("DetaBase Enable!")
+		config.DetaBase.DetaBaseKey = getEnvDefault("DETA_BASE_KEY", "")
+		config.DetaBase.DetaBaseName = getEnvDefault("DETA_BASE_NAME", "")
 		if config.DetaBase.DetaBaseKey == "" || config.DetaBase.DetaBaseName == "" {
-			log.Fatalf("BetaBase Key or Name is empty!")
+			log.Fatalf("DetaBase Key or Name is empty!")
 			return
 		}
 		// initialize with project key
@@ -177,7 +180,8 @@ func main() {
 
 	bot.Handle("/start", func(c Context) error {
 		tgLog(c, "group")
-		if c.Chat().Type == "group" {
+		if !c.Message().Private() || stoped {
+			log.Printf("skip group message")
 			return nil
 		}
 		if _, err := bot.Send(c.Chat(), config.StartMessage+"\n"+config.HelpMessage); err != nil {
@@ -188,7 +192,8 @@ func main() {
 	})
 	bot.Handle("/health", func(c Context) error {
 		tgLog(c, "health")
-		if c.Chat().Type == "group" {
+		if !c.Message().Private() || stoped {
+			log.Printf("skip group message")
 			return nil
 		}
 		if _, err := bot.Send(c.Chat(), config.HealthMessage); err != nil {
@@ -199,7 +204,8 @@ func main() {
 	})
 	bot.Handle("/help", func(c Context) error {
 		tgLog(c, "help")
-		if c.Chat().Type == "group" {
+		if !c.Message().Private() || stoped {
+			log.Printf("skip group message")
 			return nil
 		}
 		if _, err := bot.Send(c.Chat(), config.HelpMessage); err != nil {
@@ -210,7 +216,8 @@ func main() {
 	})
 	bot.Handle("/group", func(c Context) error {
 		tgLog(c, "group")
-		if c.Chat().Type == "group" {
+		if !c.Message().Private() || stoped {
+			log.Printf("skip group message")
 			return nil
 		}
 		if _, err := bot.Send(c.Chat(), config.GroupMessage); err != nil {
@@ -219,9 +226,10 @@ func main() {
 		}
 		return err
 	})
-	bot.Handle("/exit", func(c Context) error {
-		tgLog(c, "exit")
-		if c.Chat().Type == "group" {
+	bot.Handle("/enable", func(c Context) error {
+		tgLog(c, "enable")
+		if !c.Message().Private() || stoped {
+			log.Printf("skip group message")
 			return nil
 		}
 		if config.AdminID != "" && strconv.FormatInt(c.Sender().ID, 10) != config.AdminID {
@@ -231,10 +239,31 @@ func main() {
 			return err
 		}
 
-		if _, err := bot.Send(c.Chat(), "Bot 即将停止服务!"); err != nil {
+		if _, err := bot.Send(c.Chat(), "Bot 服务已启动!"); err != nil {
 			log.Println(err)
 		}
-		os.Exit(1)
+		//os.Exit(1)
+		stoped = false
+		return err
+	})
+	bot.Handle("/disable", func(c Context) error {
+		tgLog(c, "disable")
+		if !c.Message().Private() || stoped {
+			log.Printf("skip group message")
+			return nil
+		}
+		if config.AdminID != "" && strconv.FormatInt(c.Sender().ID, 10) != config.AdminID {
+			if _, err := bot.Send(c.Chat(), "你没有权限执行此操作!"); err != nil {
+				log.Println(err)
+			}
+			return err
+		}
+
+		if _, err := bot.Send(c.Chat(), "Bot 服务已停止!"); err != nil {
+			log.Println(err)
+		}
+		//os.Exit(1)
+		stoped = true
 		return err
 	})
 	bot.Handle(OnText, forwardMessage)
@@ -245,10 +274,11 @@ func main() {
 	bot.Handle(OnVenue, forwardMessage)
 	bot.Handle(OnMedia, func(c Context) error {
 		tgLog(c, "forward media")
-		if c.Chat().Type == "group" {
+		if !c.Message().Private() || stoped {
+			log.Printf("skip group message")
 			return nil
 		}
-		if _, err = bot.Send(&config.SendToGroup, c.Text()+"\n\n附件无法发送"); err != nil {
+		if _, err = bot.Send(&config.SenderChat, c.Text()+"\n\n附件无法发送"); err != nil {
 			log.Println(err)
 		}
 		return err
@@ -268,7 +298,7 @@ func main() {
 // 在接收到要转发的消息时调用此回调函数
 func forwardMessage(c Context) error {
 	tgLog(c, "forward")
-	if !c.Message().Private() {
+	if !c.Message().Private() || stoped {
 		log.Printf("skip group message")
 		return nil
 	}
@@ -278,7 +308,7 @@ func forwardMessage(c Context) error {
 		}
 		return err
 	}
-	if msg, err := bot.Send(&config.SendToGroup, c.Text()); err != nil {
+	if msg, err := bot.Send(&config.SenderChat, c.Text()); err != nil {
 		log.Println("forwardMessage error", err)
 		return err
 	} else {

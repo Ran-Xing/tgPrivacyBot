@@ -6,10 +6,11 @@
 
 ## ARG
 
-- [ ] SEND_TO_GROUP_ID `-00000000`
+- [ ] SEND_ID `-00000000`
+- [ ] SEND_TYPE `channel/group`
 - [X] TOKEN `token`
 - [ ] USE_MYSQL `no/yes`
-- [ ] MYSQL_CONFIG `user:password@tcp(ip:port)/tgPrivacyBot?charset=utf8mb4&parseTime=True&loc=Local`
+  - [ ] MYSQL_CONFIG `user:password@tcp(ip:port)/tgPrivacyBot?charset=utf8mb4&parseTime=True&loc=Local`
 - [ ] HTTP_PROXY, HTTPS_PROXY, NO_PROXY `http://ip:port`
 - [ ] START_MESSAGE `Welcome`
 - [ ] HELP_MESSAGE `help`
@@ -31,5 +32,6 @@ Settings > Security > Secrets > Actions > New repository secret > RAILWAY_TOKEN
 - /help
 - /health
 - /group
-- /exit
+- /enable
+- /disable
 - `forward text`
