@@ -177,6 +177,9 @@ func main() {
 
 	bot.Handle("/start", func(c Context) error {
 		tgLog(c, "group")
+		if c.Chat().Type == "group" {
+			return nil
+		}
 		if _, err := bot.Send(c.Chat(), config.StartMessage+"\n"+config.HelpMessage); err != nil {
 			log.Println(err)
 			return err
@@ -185,6 +188,9 @@ func main() {
 	})
 	bot.Handle("/health", func(c Context) error {
 		tgLog(c, "health")
+		if c.Chat().Type == "group" {
+			return nil
+		}
 		if _, err := bot.Send(c.Chat(), config.HealthMessage); err != nil {
 			log.Println(err)
 			return err
@@ -193,6 +199,9 @@ func main() {
 	})
 	bot.Handle("/help", func(c Context) error {
 		tgLog(c, "help")
+		if c.Chat().Type == "group" {
+			return nil
+		}
 		if _, err := bot.Send(c.Chat(), config.HelpMessage); err != nil {
 			log.Println(err)
 			return err
@@ -201,6 +210,9 @@ func main() {
 	})
 	bot.Handle("/group", func(c Context) error {
 		tgLog(c, "group")
+		if c.Chat().Type == "group" {
+			return nil
+		}
 		if _, err := bot.Send(c.Chat(), config.GroupMessage); err != nil {
 			log.Println(err)
 			return err
@@ -209,6 +221,9 @@ func main() {
 	})
 	bot.Handle("/exit", func(c Context) error {
 		tgLog(c, "exit")
+		if c.Chat().Type == "group" {
+			return nil
+		}
 		if config.AdminID != "" && strconv.FormatInt(c.Sender().ID, 10) != config.AdminID {
 			if _, err := bot.Send(c.Chat(), "你没有权限执行此操作!"); err != nil {
 				log.Println(err)
@@ -222,26 +237,17 @@ func main() {
 		os.Exit(1)
 		return err
 	})
-	bot.Handle(OnText, func(c Context) error {
-		tgLog(c, "forward")
-		if ok, _ := regexp.MatchString("^(\\d+)$", c.Text()); ok {
-			if _, err := bot.Send(c.Chat(), "Bot 不提供查询功能"); err != nil {
-				log.Println(err)
-			}
-			return err
-		}
-		if msg, err := bot.Send(&config.SendToGroup, c.Text()); err != nil {
-			log.Println(err)
-			return err
-		} else {
-			if _, err := bot.Send(c.Chat(), fmt.Sprintf("[Forward success!](t.me/%s/%d)", msg.Chat.Username, msg.ID), &SendOptions{ParseMode: "markdown"}); err != nil {
-				log.Println(err)
-			}
-		}
-		return err
-	})
+	bot.Handle(OnText, forwardMessage)
+	bot.Handle(OnPhoto, forwardMessage)
+	bot.Handle(OnDocument, forwardMessage)
+	bot.Handle(OnSticker, forwardMessage)
+	bot.Handle(OnAnimation, forwardMessage)
+	bot.Handle(OnVenue, forwardMessage)
 	bot.Handle(OnMedia, func(c Context) error {
 		tgLog(c, "forward media")
+		if c.Chat().Type == "group" {
+			return nil
+		}
 		if _, err = bot.Send(&config.SendToGroup, c.Text()+"\n\n附件无法发送"); err != nil {
 			log.Println(err)
 		}
@@ -257,6 +263,31 @@ func main() {
 	//signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
 	//<-signalChan
 	//log.Println("Shutdown signal received, exiting...")
+}
+
+// 在接收到要转发的消息时调用此回调函数
+func forwardMessage(c Context) error {
+	tgLog(c, "forward")
+	if !c.Message().Private() {
+		log.Printf("skip group message")
+		return nil
+	}
+	if ok, _ := regexp.MatchString("^(\\d+)$", c.Text()); ok {
+		if _, err := bot.Send(c.Chat(), "Bot 不提供查询功能"); err != nil {
+			log.Println(err)
+		}
+		return err
+	}
+	if msg, err := bot.Send(&config.SendToGroup, c.Text()); err != nil {
+		log.Println("forwardMessage error", err)
+		return err
+	} else {
+		if _, err := bot.Send(c.Chat(), fmt.Sprintf("[Forward success!](t.me/%s/%d)", msg.Chat.Username, msg.ID), &SendOptions{ParseMode: "markdown"}); err != nil {
+			log.Println("replyMessage error", err)
+			return err
+		}
+	}
+	return err
 }
 
 func getEnvDefault(key, defVal string) string {
